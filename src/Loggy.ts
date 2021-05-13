@@ -7,10 +7,17 @@ interface ConfigureOptions {
   appName: string;
 }
 
+type LogLevel = 'error' | 'trace' | 'warn' | 'info' | 'debug' | 'log';
+
+interface LoggerConfig {
+  logOnly: LogLevel[] | 'all';
+}
 export class Loggy extends EventEmitter {
   private consoleLoggerRegistered: boolean = false;
   private sentryLoggerRegistered: boolean = false;
   readonly appName: string = '';
+
+  readonly loggerConfig: LoggerConfig;
 
   private constructor({ appName }: ConfigureOptions) {
     super();
@@ -36,7 +43,7 @@ export class Loggy extends EventEmitter {
     return this;
   }
 
-  public registerConsoleLogger() {
+  public registerConsoleLogger(loggerConfig: LoggerConfig) {
     if (this.consoleLoggerRegistered || this.sentryLoggerRegistered) return;
     this.consoleLoggerRegistered = true;
   }
