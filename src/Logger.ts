@@ -1,4 +1,4 @@
-import { LogEntry, Loggy } from './Loggy';
+import { LogEntry, Loggy, LogLevel } from './Loggy';
 
 export abstract class Logger {
   protected loggy: Loggy;
@@ -11,7 +11,7 @@ export abstract class Logger {
     this.register();
   }
 
-  public log(logLevel: string, message: string): void {
+  public log(logLevel: LogLevel, message: string): void {
     const logEntry: LogEntry = { level: logLevel, module: this.module, message };
 
     this.loggy.emit('log', logEntry);

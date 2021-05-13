@@ -9,24 +9,11 @@ export class ConsoleLogger extends Logger {
   protected register() {
     this.loggy.onLogEntry((logEntry) => {
       const msg = `${this.loggy.appName} [${logEntry.module}] ${logEntry.message}`;
-      switch (logEntry.level) {
-        case 'trace':
-          console.trace(msg);
-          break;
-        case 'debug':
-          console.debug(msg);
-          break;
-        case 'info':
-          console.info(msg);
-          break;
-        case 'warn':
-          console.warn(msg);
-          break;
-        case 'error':
-          console.error(msg);
-          break;
-        default:
-          console.log(`{${logEntry.level}} ${msg}`);
+      if (
+        this.loggy.loggerConfig.logOnly.includes(logEntry.level) ||
+        this.loggy.loggerConfig.logOnly === 'all'
+      ) {
+        console[logEntry.level](msg);
       }
     });
   }

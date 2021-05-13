@@ -7,7 +7,7 @@ interface ConfigureOptions {
   appName: string;
 }
 
-type LogLevel = 'error' | 'trace' | 'warn' | 'info' | 'debug' | 'log';
+export type LogLevel = 'error' | 'trace' | 'warn' | 'info' | 'debug' | 'log';
 
 interface LoggerConfig {
   logOnly: LogLevel[] | 'all';
@@ -55,7 +55,7 @@ export class Loggy extends EventEmitter {
 }
 
 export interface LogEntry {
-  level: string;
+  level: LogLevel;
   module: string;
   message: string;
 }
