@@ -9,10 +9,7 @@ export class ConsoleLogger extends Logger {
   protected register() {
     this.loggy.onLogEntry((logEntry) => {
       const msg = `${this.loggy.appName} [${logEntry.module}] ${logEntry.message}`;
-      if (
-        this.loggy.loggerConfig.logOnly.includes(logEntry.level) ||
-        this.loggy.loggerConfig.logOnly === 'all'
-      ) {
+      if (this.loggy.logOnly === 'all' || this.loggy.logOnly.includes(logEntry.level)) {
         console[logEntry.level](msg);
       }
     });
