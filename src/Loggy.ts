@@ -4,7 +4,7 @@ import { Logger } from './Logger';
 
 const { timestamp, combine, printf, errors } = format;
 
-export type LogLevel = 'error' | 'trace' | 'debug' | 'info' | 'warn';
+export type LogLevel = 'error' | 'warn' | 'trace' | 'info' | 'debug';
 type LogStrategy = 'sematext' | 'console';
 
 interface ConfigureOptions {
@@ -63,7 +63,13 @@ export class Loggy {
     if (this.defaultConsoleLogger == null) {
       this.defaultConsoleLogger = this.createConsoleLogger();
     }
-    const meta = { module, ...this.options.defaultMetadata };
+
+    const {
+      defaultMetadata,
+      consoleConfig: { disableDefaultMeta }
+    } = this.options;
+
+    const meta = disableDefaultMeta ? { module } : { ...defaultMetadata, module };
     return new Logger(meta, this.defaultConsoleLogger);
   }
 
@@ -73,7 +79,7 @@ export class Loggy {
 
     return createLogger({
       levels: this.levels,
-      format: format.simple(),
+      format: format.combine(errors({ stack: true })),
       transports: [
         new Logsene({
           token: token,
@@ -86,8 +92,12 @@ export class Loggy {
   }
 
   private createConsoleLogger(): WinstonLogger {
-    const logFormat = printf(({ level, message, timestamp: _timestamp, stack, meta }) => {
-      return `${_timestamp} [${level}]: ${stack || message} ${JSON.stringify(meta, undefined, 2)}`;
+    const logFormat = printf(({ level, message, timestamp: _timestamp, stack, logEntry }) => {
+      return `${_timestamp} [${level}]: ${stack || message} ${JSON.stringify(
+        logEntry,
+        undefined,
+        2
+      )}`;
     });
 
     return createLogger({

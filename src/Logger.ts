@@ -12,8 +12,7 @@ export class Logger {
 
   private log(logLevel: LogLevel, message: string, meta?: any): void {
     const logEntry = { ...this.defaultMeta, meta };
-
-    this.winstonLogger.log(logLevel, message, logEntry);
+    this.winstonLogger.log(logLevel, message, { logEntry });
   }
 
   public trace(message: string, meta?: any): void {

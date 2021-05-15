@@ -2,7 +2,11 @@ import { Loggy } from './Loggy';
 
 const loggy = Loggy.configure({
   defaultMetadata: { appName: 'My App' },
-  consoleConfig: { level: 'debug', disableDefaultMeta: false },
+  consoleConfig: { level: 'warn', disableDefaultMeta: true },
+  sematextConfig: {
+    token: '8247edc9-0799-4ab5-9129-f743d757a1fe',
+    level: 'debug'
+  },
   logStrategy: 'console'
 });
 
@@ -19,7 +23,7 @@ logger.error(new Error('dasda'));
 
 logger.error(new Error('wrong'), { id: '4234' });
 
-logger.debug('Something went wrong', { appName: 'coachinks' });
+logger.debug('Something went wrong');
 logger.info('Something went wrong', { appName: 'coachinks' });
 logger.warn('Something went wrong', { appName: 'coachinks' });
 logger.error('Something went wrong', { appName: 'coachinks' });
