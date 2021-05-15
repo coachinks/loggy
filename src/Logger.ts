@@ -1,41 +1,38 @@
-import { LogEntry, Loggy, LogLevel } from './Loggy';
+import winston from 'winston';
+import { LogLevel } from './Loggy';
 
-export abstract class Logger {
-  protected loggy: Loggy;
-  private module: string;
+export class Logger {
+  private defaultMeta: any;
+  private winstonLogger: winston.Logger;
 
-  constructor(loggy: Loggy, module: string) {
-    this.loggy = loggy;
-    this.module = module;
-
-    this.register();
+  constructor(defaultMeta: any, winstonLogger: winston.Logger) {
+    this.defaultMeta = defaultMeta;
+    this.winstonLogger = winstonLogger;
   }
 
-  public log(logLevel: LogLevel, message: string): void {
-    const logEntry: LogEntry = { level: logLevel, module: this.module, message };
+  private log(logLevel: LogLevel, message: string, meta?: any): void {
+    const logEntry = { ...this.defaultMeta, meta };
 
-    this.loggy.emit('log', logEntry);
+    this.winstonLogger.log(logLevel, message, logEntry);
   }
 
-  public trace(message: string): void {
-    this.log('trace', message);
+  public trace(message: string, meta?: any): void {
+    this.log('trace', message, meta);
   }
 
-  public debug(message: string): void {
-    this.log('debug', message);
+  public debug(message: string, meta?: any): void {
+    this.log('debug', message, meta);
   }
 
-  public info(message: string): void {
-    this.log('info', message);
+  public info(message: string, meta?: any): void {
+    this.log('info', message, meta);
   }
 
-  public warn(message: string): void {
-    this.log('warn', message);
+  public warn(message: string, meta?: any): void {
+    this.log('warn', message, meta);
   }
 
-  public error(message: string): void {
-    this.log('error', message);
+  public error(message: string | any, meta?: any): void {
+    this.log('error', message, meta);
   }
-
-  protected abstract register(): any;
 }

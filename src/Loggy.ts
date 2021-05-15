@@ -1,24 +1,42 @@
-import EventEmitter from 'events';
-import { ConsoleLogger } from './ConsoleLogger';
+import { Logger as WinstonLogger, format, createLogger, transports } from 'winston';
+import Logsene from 'winston-logsene';
 import { Logger } from './Logger';
-import { SentryLogger } from './SentryLogger';
+
+const { timestamp, combine, printf, errors } = format;
+
+export type LogLevel = 'error' | 'trace' | 'debug' | 'info' | 'warn';
+type LogStrategy = 'sematext' | 'console';
 
 interface ConfigureOptions {
-  appName: string;
+  consoleConfig: {
+    level: LogLevel;
+    disableDefaultMeta: boolean;
+  };
+  sematextConfig?: {
+    token: string;
+    level: LogLevel;
+  };
+  logStrategy: LogStrategy;
+  defaultMetadata: {
+    appName: string;
+  };
 }
 
-export type LogLevel = 'error' | 'trace' | 'warn' | 'info' | 'debug' | 'log';
+export class Loggy {
+  private readonly options: ConfigureOptions;
+  private defaultConsoleLogger: WinstonLogger;
+  private defaultSematextLogger: WinstonLogger;
 
-export class Loggy extends EventEmitter {
-  private consoleLoggerRegistered: boolean = false;
-  private sentryLoggerRegistered: boolean = false;
-  readonly appName: string = '';
+  private readonly levels = {
+    error: 0,
+    warn: 1,
+    trace: 2,
+    info: 3,
+    debug: 4
+  };
 
-  logOnly: LogLevel[] | 'all' = 'all';
-
-  private constructor({ appName }: ConfigureOptions) {
-    super();
-    this.appName = appName;
+  private constructor(options: ConfigureOptions) {
+    this.options = options;
   }
 
   public static configure(options: ConfigureOptions): Loggy {
@@ -26,35 +44,69 @@ export class Loggy extends EventEmitter {
   }
 
   public getLogger(module: string): Logger {
-    if (this.consoleLoggerRegistered) {
-      return new ConsoleLogger(this, module) as Logger;
-    } else if (this.sentryLoggerRegistered) {
-      return new SentryLogger(this, module) as Logger;
-    } else {
-      throw new Error(`You must register a logger before creating one`);
+    if (this.options.logStrategy === 'sematext') {
+      return this.getSematextLogger(module);
     }
+
+    return this.getConsoleLogger(module);
   }
 
-  public onLogEntry(listener: (logEntry: LogEntry) => void): Loggy {
-    this.on('log', listener);
-    return this;
+  private getSematextLogger(module: string) {
+    if (this.defaultSematextLogger == null) {
+      this.defaultSematextLogger = this.createSematextLogger();
+    }
+    const meta = { module, ...this.options.defaultMetadata };
+    return new Logger(meta, this.defaultSematextLogger);
   }
 
-  public registerConsoleLogger(logOnly: LogLevel[] | 'all') {
-    if (this.consoleLoggerRegistered || this.sentryLoggerRegistered) return;
-    this.logOnly = logOnly;
-    this.consoleLoggerRegistered = true;
+  private getConsoleLogger(module: string) {
+    if (this.defaultConsoleLogger == null) {
+      this.defaultConsoleLogger = this.createConsoleLogger();
+    }
+    const meta = { module, ...this.options.defaultMetadata };
+    return new Logger(meta, this.defaultConsoleLogger);
   }
 
-  public registerSentryLogger(logOnly: LogLevel[] | 'all') {
-    if (this.consoleLoggerRegistered || this.sentryLoggerRegistered) return;
-    this.logOnly = logOnly;
-    this.sentryLoggerRegistered = true;
-  }
-}
+  private createSematextLogger(): WinstonLogger {
+    const { token, level } = this.options.sematextConfig!;
+    if (token == null) throw new Error(`Invalid sematext token: ${token}`);
 
-export interface LogEntry {
-  level: LogLevel;
-  module: string;
-  message: string;
+    return createLogger({
+      levels: this.levels,
+      format: format.simple(),
+      transports: [
+        new Logsene({
+          token: token,
+          level: level,
+          type: 'app_logs',
+          url: 'https://logsene-receiver.sematext.com'
+        })
+      ]
+    });
+  }
+
+  private createConsoleLogger(): WinstonLogger {
+    const logFormat = printf(({ level, message, timestamp: _timestamp, stack, meta }) => {
+      return `${_timestamp} [${level}]: ${stack || message} ${JSON.stringify(meta, undefined, 2)}`;
+    });
+
+    return createLogger({
+      levels: this.levels,
+      format: combine(
+        format.colorize({
+          colors: {
+            trace: 'cyan'
+          }
+        }),
+        timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+        errors({ stack: true }),
+        logFormat
+      ),
+      transports: [
+        new transports.Console({
+          level: this.options.consoleConfig.level
+        })
+      ]
+    });
+  }
 }
