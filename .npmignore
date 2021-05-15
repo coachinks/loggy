@@ -1,1 +1,8 @@
 src/
+.eslintignore
+.eslintrc.json
+.gitignore
+.prettierrc
+.nvmrc
+.prettierignore
+tsconfig.json
